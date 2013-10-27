@@ -23,7 +23,7 @@
 <body>
 
 <script src="//plus.google.com/hangouts/_/api/v1/hangout.js"></script>
-<script src="http://localhost:3000/js/app.dev.js"></script>
+<script src="//localhost:3333/js/app.dev.js"></script>
 
 <h3>Vote on stuff</h3>
 
