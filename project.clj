@@ -14,7 +14,6 @@
             [lein-ring "0.8.7"]]
   :hooks [leiningen.cljsbuild]
   :source-paths ["src/clj"]
-  :main voter.server
   :ring {:handler voter.server/app}
 
   :repl-options {:nrepl-middleware [cemerick.piggieback/wrap-cljs-repl]}
