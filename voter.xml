@@ -27,9 +27,7 @@
 
 <h3>Vote on stuff</h3>
 
-<p>
-  Here is where we could put some forms & whatnot
-</p>
+<div id="voter_content"></div>
 
 <hr>
 
