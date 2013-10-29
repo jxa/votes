@@ -1,78 +1,38 @@
 (ns voter.core
-  (:require [clojure.browser.repl :as repl]
-            [dommy.core :as dommy])
+  (:require [dommy.core :as dommy]
+            [voter.hangout :as hangout])
   (:use-macros
     [dommy.macros :only [node sel sel1 deftemplate]]))
 
 
-;; class Participant(
-;;   id,
-;;   displayIndex,
-;;   hasMicrophone,
-;;   hasCamera,
-;;   hasAppEnabled,
-;;   isBroadcaster,
-;;   isInBroadcast,
-;;   locale,
-;;   person,
-;;   person.id,
-;;   person.displayName,
-;;   person.image,
-;;   person.image.url
-;; )
-
-(deftemplate person-t [p]
-  [:div.person
-   [:div.name (.-displayName p)]
-   [:img.avatar {:src (.-url (.-image p))}]])
-
 (defn log [msg]
   (.log js/console msg))
 
-(def hangout (.-hangout js/gapi))
-(def hangout-data (.-data hangout))
 
-(defn on-hangout-ready
-  "add callback which fires after initialization is complete"
-  [fun]
-  (.add (.-onApiReady hangout) fun))
+(deftemplate person-t [person votes {:keys [all-votes-cast me]}]
+  (let [person-id (.-id person)
+        vote-class (cond
+                    (= me person-id) "me"
+                    all-votes-cast   "visible"
+                    :else            "hidden")]
+    [:div.person
+     [:div.name (.-displayName person)]
+     [:img.avatar {:src (.-url (.-image person))}]
+     [:div.vote
+      {:class vote-class}
+      (get votes person-id)]]))
 
-(defn enabled-participants []
-  (.getEnabledParticipants hangout))
-
-(defn on-participants-change
-  "call fun whenever the set of participants running the app changes"
-  [fun]
-  (.add (.-onEnabledParticipantsChanged hangout) fun))
-
-(defn on-state-change [fun]
-  (.add (.-onStateChanged hangout-data) fun))
-
-(defn set-shared-state [key value]
-  (.setValue hangout-data key value))
-
-(defn clear-shared-state []
-  (let [keys (.getKeys hangout-data)]
-    (.submitDelta hangout-data
-                  (clj->js
-                   (into {} (map
-                             (fn [key] [key ""])
-                             keys))))))
-
-(defn my-id []
-  (.getLocalParticipantId hangout))
 
 (defn cast-my-vote [e]
   (.preventDefault e)
   (let [input (sel1 :#my-vote)
         vote (dommy/value input)]
-    (log (str "my vote is " vote))
-    (set-shared-state (my-id) vote)
+    (hangout/set-shared-state (hangout/my-id) vote)
     (dommy/set-value! input "")))
 
 (defn clear-all-votes [e]
-  (log "clearing all votes")
-  (clear-shared-state))
+  (.preventDefault e)
+  (hangout/clear-shared-state))
 
 (defn init-ui []
   (dommy/append! (sel1 :#voter_content)
@@ -87,28 +47,37 @@
   (dommy/listen! (sel1 :#clear-all)
                  :click clear-all-votes))
 
-(defn render-participants [participants]
-  (dommy/replace-contents!
-   (sel1 :#voters)
-   (map person-t
-        (map #(.-person %) participants))))
+(defn participant-votes [people state]
+  (into {} (map (fn [p]
+                  [(.-id p) (aget state (.-id p))])
+                people)))
+
+(defn render-participants [participants state]
+  (let [people (map #(.-person %) participants)
+        me (hangout/my-id)
+        votes (participant-votes people state)
+        all-votes-cast (every? (complement empty?) votes)]
+    (dommy/replace-contents!
+     (sel1 :#voters)
+     (map (fn [person]
+            (person-t person votes {:all-votes-cast all-votes-cast :me me}))
+          people))))
 
 (defn init []
   (log "hangout loaded")
   (init-ui)
-  (render-participants (enabled-participants))
-  (on-participants-change (fn [e]
-                            (log "We have new participants")
-                            (render-participants (enabled-participants))))
-  (on-state-change (fn [e]
-                     (log "state changed")
-                     (log (.-state e)))))
+  (render-participants (hangout/enabled-participants) (hangout/shared-state))
+  (hangout/on-participants-change (fn [e]
+                                    (log "We have new participants")
+                                    (render-participants (hangout/enabled-participants)
+                                                         (hangout/shared-state))))
+  (hangout/on-state-change (fn [e]
+                             (log "state changed")
+                             (log (.-state e))
+                             (render-participants (hangout/enabled-participants)
+                                                  (.-state e)))))
 
-(on-hangout-ready (fn [e]
-                    (if (.-isApiReady e)
-                      (init))))
-
-(log "code loaded")
+(hangout/on-hangout-ready init)
 
 
 ;; (repl/connect "http://localhost:9000/repl")
