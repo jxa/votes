@@ -23,16 +23,17 @@
                  ([] (brepl 9000))
                  ([port] (pb/cljs-repl :repl-env (browser/repl-env :port port))))]
 
-  :cljsbuild {:builds {:prod {:source-paths ["src/cljs"]
-                              :jar true
-                              :compiler {:output-to "resources/public/js/app.js"
-                                         :source-map "resources/public/js/app.js.map"
-                                         :optimizations :advanced
-                                         :pretty-print false
-                                         :externs ["resources/externs.js"]}}
-                       :dev {:source-paths ["src/cljs"]
-                             :jar true
-                             :compiler {:output-to "resources/public/js/app.dev.js"
-                                        :optimizations :whitespace
-                                        :pretty-print true
-                                        :externs ["resources/externs.js"]}}}})
+  :cljsbuild {:builds
+              {;; :prod {:source-paths ["src/cljs"]
+               ;;        :jar true
+               ;;        :compiler {:output-to "resources/public/js/app.js"
+               ;;                   :source-map "resources/public/js/app.js.map"
+               ;;                   :optimizations :advanced
+               ;;                   :pretty-print false
+               ;;                   :externs ["resources/externs.js"]}}
+               :dev {:source-paths ["src/cljs"]
+                     :jar true
+                     :compiler {:output-to "resources/public/js/app.dev.js"
+                                :optimizations :whitespace
+                                :pretty-print true
+                                :externs ["resources/externs.js"]}}}})
