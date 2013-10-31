@@ -20,18 +20,22 @@
 <Content type="html"><![CDATA[
 
 <html>
+  <head>
+    <link rel="stylesheet" type="text/css" href="//jxa.github.io/votes/css/normalize.css" />
+    <link rel="stylesheet" type="text/css" href="//jxa.github.io/votes/css/app.css" />
+  </head>
+
 <body>
 
-<script src="//plus.google.com/hangouts/_/api/v1/hangout.js"></script>
-<script src="https://straylight.local/js/app.dev.js"></script>
+  <script src="//plus.google.com/hangouts/_/api/v1/hangout.js"></script>
+  <script src="//jxa.github.io/votes/js/app.dev.js"></script>
+  <!-- <script src="https://straylight.local/js/app.dev.js"></script> -->
 
-<h3>Vote on stuff</h3>
+  <h3>Vote on stuff</h3>
 
-<div id="voter_content"></div>
+  <div id="voter_content"></div>
 
-<hr>
-
-</body>
+  </body>
 </html>
 ]]>
 </Content>
