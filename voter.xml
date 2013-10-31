@@ -28,8 +28,9 @@
 <body>
 
   <script src="//plus.google.com/hangouts/_/api/v1/hangout.js"></script>
-  <script src="//jxa.github.io/votes/js/app.dev.js"></script>
+  <!-- <script src="//jxa.github.io/votes/js/app.dev.js"></script> -->
   <!-- <script src="https://straylight.local/js/app.dev.js"></script> -->
+  <script src="https://straylight.neo/js/app.dev.js"></script>
 
   <h3>Vote on stuff</h3>
 
