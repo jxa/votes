@@ -1,5 +1,6 @@
 (ns voter.core
-  (:require [dommy.core :as dommy]
+  (:require [clojure.browser.repl :as repl]
+            [dommy.core :as dommy]
             [voter.hangout :as hangout])
   (:use-macros
     [dommy.macros :only [node sel sel1 deftemplate]]))
@@ -11,17 +12,23 @@
 
 (deftemplate person-t [person votes {:keys [all-votes-cast me]}]
   (let [person-id (.-id person)
+        vote (get votes person-id)
         vote-class (cond
-                    (= me person-id) "me"
+                    (= me person-id) "visible"
                     all-votes-cast   "visible"
-                    :else            "hidden")]
-    [:div.person
+                    :else            "")]
+    [:li.person {:class (if (empty? vote) "no-vote" "voted")}
      [:div.name (.-displayName person)]
-     [:img.avatar {:src (.-url (.-image person))}]
-     [:div.vote
-      {:class vote-class}
-      (get votes person-id)]]))
+     [:div.picture
+      [:img.avatar {:src (.-url (.-image person))}]
+      [:div.vote {:class vote-class} vote]]]))
 
+;; TODOs ...
+;; figure out the timing issue on app load (or is it a load issue?)
+;; gapi.hangout.layout.displayNotice to show when a vote is opened
+;; John has opened a new voting issue...
+;; Abstain from voting (but you want to see the vote results)
+;;   - maybe implemented with a simple "Abstain" checkbox + flag
 
 (defn cast-my-vote [e]
   (.preventDefault e)
@@ -36,12 +43,12 @@
 
 (defn init-ui []
   (dommy/append! (sel1 :#voter_content)
-                 [:div#voters]
+                 [:ul#voters]
                  [:div#voting-booth
                   [:form#vote-form
                    [:input#my-vote {:name "my-vote"}]
-                   [:input {:type "submit"}]]
-                  [:button#clear-all "Clear All Votes"]])
+                   [:input {:type "submit" :value "Vote!"}]]
+                  [:button#clear-all "Reset Votes"]])
   (dommy/listen! (sel1 :#vote-form)
                  :submit cast-my-vote)
   (dommy/listen! (sel1 :#clear-all)
@@ -56,7 +63,7 @@
   (let [people (map #(.-person %) participants)
         me (hangout/my-id)
         votes (participant-votes people state)
-        all-votes-cast (every? (complement empty?) votes)]
+        all-votes-cast (every? (complement empty?) (vals votes))]
     (dommy/replace-contents!
      (sel1 :#voters)
      (map (fn [person]
