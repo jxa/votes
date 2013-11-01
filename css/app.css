@@ -4,6 +4,11 @@
   display: inline-block;
   margin: 10px;
   position: relative;
+  border: 2px solid transparent;
+}
+
+.person .voted {
+  border: 2px solid lightgreen;
 }
 
 .vote {
