@@ -17,7 +17,7 @@
 (def my-id (atom ""))
 
 
-(defn person-t [{:keys [id name img-url vote]}]
+(defn person-t [{:keys [id name img-url vote] :as person}]
   [:li.person {:class (when-not (empty? vote) "voted")}
    [:div.name name]
    [:div.picture
@@ -36,6 +36,15 @@
           [:input#my-vote {:name "my-vote"}]
           [:input {:type "submit" :value "Vote!"}]]
          [:button#clear-all "Reset Votes"]]])
+
+(defn update-participant
+  "People is a vector of maps. Find the map identified by id and update the value at key"
+  [people id key val]
+  (map (fn [person]
+         (if (= id (:id person))
+           (assoc person key val)
+           person))
+       people))
 
 ;; TODOs ...
 ;; gapi.hangout.layout.displayNotice to show when a vote is opened
@@ -106,4 +115,9 @@
 ;;         (hangout/on-hangout-ready init)))
 
 (when (aget js/window "__include_brepl")
-  (repl/connect "http://localhost:9000/repl"))
+  (repl/connect "http://localhost:9000/repl")
+  (defn data! []
+    (reset! my-id "2")
+    (reset! participants
+            [{:id "1", :name "John", :img-url "http://i206.photobucket.com/albums/bb22/cherrycreamsoda_photos/david-hasselhoff-07.jpg", :vote ""}
+             {:id "2", :name "Chandu", :img-url "http://i206.photobucket.com/albums/bb22/cherrycreamsoda_photos/david-hasselhoff-07.jpg", :vote "2"}])))
