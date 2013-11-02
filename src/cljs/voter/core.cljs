@@ -1,30 +1,43 @@
 (ns voter.core
-  (:require [clojure.browser.repl :as repl]
-            [dommy.core :as dommy]
-            [voter.hangout :as hangout])
+  (:require
+   [clojure.browser.repl :as repl]
+   [voter.hangout :as hangout]
+   [c2.core :refer [unify]]
+   [c2.dom :as dom]
+   [c2.event :as event])
   (:use-macros
-    [dommy.macros :only [node sel sel1 deftemplate]]))
+   [c2.util :only [bind! pp]]))
 
 
 (defn log [msg]
   (.log js/console msg))
 
 
-(deftemplate person-t [person votes {:keys [all-votes-cast me]}]
-  (let [person-id (.-id person)
-        vote (get votes person-id)
-        vote-class (cond
-                    (= me person-id) "visible"
-                    all-votes-cast   "visible"
-                    :else            "")]
-    [:li.person {:class (if (empty? vote) "no-vote" "voted")}
-     [:div.name (.-displayName person)]
-     [:div.picture
-      [:img.avatar {:src (.-url (.-image person))}]
-      [:div.vote {:class vote-class} vote]]]))
+(def participants (atom []))
+(def my-id (atom ""))
+
+
+(defn person-t [{:keys [id name img-url vote]}]
+  [:li.person {:class (when-not (empty? vote) "voted")}
+   [:div.name name]
+   [:div.picture
+    [:img.avatar {:src img-url}]
+    [:div.vote {:class (when (= @my-id id) "visible")}
+     vote]]])
+
+(bind! "#voter_content"
+       [:div#content-inner
+        [:ul#voters
+         {:class (when-not (some empty? (map :vote @participants))
+                   "all-votes-cast")}
+         (unify @participants person-t)]
+        [:div#voting-booth
+         [:form#vote-form
+          [:input#my-vote {:name "my-vote"}]
+          [:input {:type "submit" :value "Vote!"}]]
+         [:button#clear-all "Reset Votes"]]])
 
 ;; TODOs ...
-;; figure out the timing issue on app load (or is it a load issue?)
 ;; gapi.hangout.layout.displayNotice to show when a vote is opened
 ;; John has opened a new voting issue...
 ;; Abstain from voting (but you want to see the vote results)
@@ -32,27 +45,15 @@
 
 (defn cast-my-vote [e]
   (.preventDefault e)
-  (let [input (sel1 :#my-vote)
-        vote (dommy/value input)]
+  (let [input (dom/select "#my-vote")
+        vote (dom/val input)]
     (hangout/set-shared-state (hangout/my-id) vote)
-    (dommy/set-value! input "")))
+    (dom/val input "")))
 
 (defn clear-all-votes [e]
   (.preventDefault e)
   (hangout/clear-shared-state))
 
-(defn init-ui []
-  (dommy/append! (sel1 :#voter_content)
-                 [:ul#voters]
-                 [:div#voting-booth
-                  [:form#vote-form
-                   [:input#my-vote {:name "my-vote"}]
-                   [:input {:type "submit" :value "Vote!"}]]
-                  [:button#clear-all "Reset Votes"]])
-  (dommy/listen! (sel1 :#vote-form)
-                 :submit cast-my-vote)
-  (dommy/listen! (sel1 :#clear-all)
-                 :click clear-all-votes))
 
 (defn participant-votes [people state]
   (into {} (map (fn [p]
@@ -70,21 +71,39 @@
             (person-t person votes {:all-votes-cast all-votes-cast :me me}))
           people))))
 
+(comment
+  participant
+  {:id ""
+   :vote ""
+   :name ""
+   :img-url ""
+   })
+
+
 (defn init []
   (log "hangout loaded")
-  (init-ui)
+
+  (reset! my-id (hangout/my-id))
+
+  (event/on-raw "#vote-form" :submit cast-my-vote)
+  (event/on-raw "#clear-all" :click clear-all-votes)
+
+  ;; TODO: This needs to change so it's only adding / removing from the participants atom
   (render-participants (hangout/enabled-participants) (hangout/shared-state))
   (hangout/on-participants-change (fn [e]
                                     (log "We have new participants")
                                     (render-participants (hangout/enabled-participants)
                                                          (hangout/shared-state))))
+  ;; TODO: only update the participants who changed
   (hangout/on-state-change (fn [e]
                              (log "state changed")
                              (log (.-state e))
                              (render-participants (hangout/enabled-participants)
                                                   (.-state e)))))
 
-(hangout/on-hangout-ready init)
+;; (event/on-load
+;;       (fn []
+;;         (hangout/on-hangout-ready init)))
 
-
-;; (repl/connect "http://localhost:9000/repl")
+(when (aget js/window "__include_brepl")
+  (repl/connect "http://localhost:9000/repl"))

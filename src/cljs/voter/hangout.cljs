@@ -1,7 +1,10 @@
 (ns voter.hangout)
 
-(def hangout (.-hangout js/gapi))
-(def hangout-data (.-data hangout))
+;; this blows up in development mode (without hangout api)
+;; TODO: include the hangouts api in the build process?
+(when (.hasOwnProperty js/window "gapi")
+  (def hangout (.-hangout js/gapi))
+  (def hangout-data (.-data hangout)))
 
 (defn on-hangout-ready
   "add callback which fires after initialization is complete"
