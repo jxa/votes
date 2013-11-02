@@ -33,7 +33,7 @@
          (unify @participants person-t)]
         [:div#voting-booth
          [:form#vote-form
-          [:input#my-vote {:name "my-vote"}]
+          [:input#my-vote {:name "my-vote" :autofocus true :maxlength 4 :size 4}]
           [:input {:type "submit" :value "Vote!"}]]
          [:button#clear-all "Reset Votes"]]])
 
