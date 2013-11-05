@@ -25,7 +25,7 @@
     [:div.vote {:class (when (= @my-id id) "visible")}
      vote]]])
 
-(bind! "#voter_content"
+(bind! "#voter-content"
        [:div#content-inner
         [:ul#voters
          {:class (when-not (some empty? (map :vote @participants))
@@ -89,7 +89,6 @@
 
 
 (defn init []
-  (log "hangout loaded")
 
   ;; Setup current state
   (reset! my-id (hangout/my-id))
@@ -103,12 +102,10 @@
   ;; google hangout event handling
   (hangout/on-participants-change
    (fn [e]
-     (log "We have new participants")
      (swap! participants update-participants (.-enabledParticipants e))))
 
   (hangout/on-state-change
    (fn [e]
-     (log "state changed")
      (swap! participants update-votes (.-state e)))))
 
 (defn ^:export run []

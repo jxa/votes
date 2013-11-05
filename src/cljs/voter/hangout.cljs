@@ -11,8 +11,7 @@
   [fun]
   (.add (.-onApiReady hangout)
         (fn [e]
-          (if (.-isApiReady e)
-            (fun)))))
+          (fun))))
 
 (defn on-participants-change
   "call fun whenever the set of participants running the app changes"

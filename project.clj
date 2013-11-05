@@ -7,12 +7,16 @@
                  [org.clojure/clojurescript "0.0-1978"]
                  [ring "1.2.0"]
                  [com.keminglabs/c2 "0.2.3"]
-                 [com.cemerick/piggieback "0.1.0"]]
+                 [com.cemerick/piggieback "0.1.0"]
+                 [me.raynes/fs "1.4.5"]
+                 [enlive "1.1.4"]]
 
   :plugins [[lein-cljsbuild "0.3.4"]
             [lein-ring "0.8.7"]]
-  :hooks [leiningen.cljsbuild]
+
   :source-paths ["src/clj"]
+  :resource-paths ["src/templates"]
+
   :ring {:handler voter.server/app}
 
   ;; :profiles {:dev {:plugins [[com.cemerick/clojurescript.test "0.1.0"]]}}
@@ -20,21 +24,18 @@
   :repl-options {:nrepl-middleware [cemerick.piggieback/wrap-cljs-repl]}
 
   :cljsbuild {:builds
-              {;; :prod {:source-paths ["src/cljs"]
-               ;;        :jar true
-               ;;        :compiler {:output-to "resources/public/js/app.js"
-               ;;                   :source-map "resources/public/js/app.js.map"
-               ;;                   :optimizations :advanced
-               ;;                   :pretty-print false
-               ;;                   :externs ["resources/externs.js"]}}
+              {:staging {:source-paths ["src/cljs"]
+                      :compiler {:output-to "dist/staging/js/app.js"
+                                 :source-map "dist/staging/js/app.js.map"
+                                 :optimizations :advanced
+                                 :pretty-print false
+                                 :externs ["resources/externs.js"]}}
                :dev {:source-paths ["src/cljs"]
-                     :jar true
                      :compiler {:output-to "resources/public/js/app.dev.js"
                                 :optimizations :whitespace
                                 :pretty-print true
                                 :externs ["resources/externs.js"]}}
               ;;  :test {:source-paths ["src/cljs" "test/cljs"]
-              ;;         :jar true
               ;;         :compiler {:output-to "target/cljs/test.js"
               ;;                    :optimizations :whitespace
               ;;                    :pretty-print true
