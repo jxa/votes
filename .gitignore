@@ -4,7 +4,7 @@
 /checkouts
 /out
 /repl
-/resources/public/js
+/resources/public
 pom.xml
 pom.xml.asc
 *.jar
@@ -14,3 +14,6 @@ pom.xml.asc
 .lein-failures
 .lein-plugins
 .lein-repl-history
+/.sass-cache
+/src/sass/.sass-cache
+/src/sass/bourbon/.sass-cache
