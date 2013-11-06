@@ -26,4 +26,16 @@ gapi.hangout.Participant = {
     displayName: null,
     image: {url: null}
   }
+};
+
+gapi.hangout.EnabledParticipantsChangedEvent = {
+  enabledParticipants: null
+};
+
+gapi.hangout.EnabledParticipantsChangedEvent = {
+  enabledParticipants: null
+};
+
+gapi.hangout.data.StateChangedEvent = {
+  state: null
 }

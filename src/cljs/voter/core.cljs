@@ -16,26 +16,30 @@
 (def participants (atom []))
 (def my-id (atom ""))
 
-
 (defn person-t [{:keys [id name img-url vote] :as person}]
-  [:li.person {:class (when-not (empty? vote) "voted")}
-   [:div.name name]
+  [:li.person {:class (str (when-not (empty? vote) "voted")
+                           (when (= @my-id id) " visible"))}
    [:div.picture
-    [:img.avatar {:src img-url}]
-    [:div.vote {:class (when (= @my-id id) "visible")}
-     vote]]])
+    [:div
+     [:img.avatar {:src img-url}]
+     [:div.vote {:class (when (= @my-id id) "visible")}
+      vote]]]
+   [:div.name name]])
 
 (bind! "#voter-content"
-       [:div#content-inner
-        [:ul#voters
-         {:class (when-not (some empty? (map :vote @participants))
-                   "all-votes-cast")}
-         (unify @participants person-t)]
-        [:div#voting-booth
-         [:form#vote-form
-          [:input#my-vote {:name "my-vote" :autofocus true :maxlength 4 :size 4}]
-          [:input {:type "submit" :value "Vote!"}]]
-         [:button#clear-all "Reset Votes"]]])
+       (let [all-votes-cast (when-not (some empty? (map :vote @participants))
+                              "all-votes-cast")]
+         [:div#content-inner
+          [:ul#voters
+           {:class all-votes-cast}
+           (unify @participants person-t)]
+          [:div#voting-booth
+           [:form#vote-form
+            [:input#my-vote {:name "my-vote" :autofocus true :autocomplete "off"
+                             :maxlength 4 :size 4 :placeholder "Enter Vote"}]
+            [:input#submit-vote {:type "submit" :value "Vote"}]]
+           [:button#clear-all {:class all-votes-cast} "Reset All Votes"]]]))
+
 
 
 ;; Form Event Handlers
@@ -87,7 +91,6 @@
        participants))
 
 
-
 (defn init []
 
   ;; Setup current state
@@ -126,6 +129,7 @@
 
 ;; TODOs ...
 ;; gapi.hangout.layout.displayNotice to show when a vote is opened
-;; John has opened a new voting issue...
+;;    -- or reset "Derek has reset the vote"
 ;; Abstain from voting (but you want to see the vote results)
 ;;   - maybe implemented with a simple "Abstain" checkbox + flag
+;; disable clicking on "reset all votes" until all votes are cast

@@ -15,7 +15,7 @@
             [lein-ring "0.8.7"]]
 
   :source-paths ["src/clj"]
-  :resource-paths ["src/templates"]
+  :resource-paths ["resources" "src/templates"]
 
   :ring {:handler voter.server/app}
 
@@ -31,7 +31,7 @@
                                  :pretty-print false
                                  :externs ["resources/externs.js"]}}
                :dev {:source-paths ["src/cljs"]
-                     :compiler {:output-to "resources/public/js/app.dev.js"
+                     :compiler {:output-to "resources/public/js/app.js"
                                 :optimizations :whitespace
                                 :pretty-print true
                                 :externs ["resources/externs.js"]}}
