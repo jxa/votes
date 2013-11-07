@@ -29,57 +29,104 @@ img {
   padding: 16px;
 }
 
+/* .person { */
+/*   display: block; */
+/*   margin: 0 0 16px; */
+/*   position: relative; */
+    
+/*   .name { */
+/*     display: inline-block; */
+/*     position: relative; */
+/*     bottom: 19px; */
+/*     color: white; */
+/*     text-shadow: 0 1px 1px rgba(black,0.3); */
+/*   } */
+
+/*   .picture { */
+/*     @include size(50); */
+
+/*     margin: 0 20px 0 0; */
+/*     border-radius: 50%; */
+/*     overflow: hidden; */
+/*     display: inline-block; */
+/*     box-shadow: 0 1px 2px rgba(black, 0.3); */
+/*     @include transition(all 1.4s); */
+/*     @include transform-style(preserve-3d); */
+/*   } */
+
+/*   &.voted .picture { */
+/*     /\* @include animation(pulse .75s infinite alternate, *\/ */
+/*     /\*                   wobble .5s); *\/ */
+/*   } */
+
+
+/* } */
+
+/* .avatar { */
+/*   @include backface-visibility(hidden); */
+/*   @include size(50); */
+/*   position: absolute; */
+/*   top: 0; */
+/*   left: 0; */
+/*   border-radius: 50%; */
+/*   overflow: hidden; */
+/*   display: block; */
+/* } */
+
+
 .person {
-  display: block;
-  margin: 0 0 16px;
-  
-  .name {
-    display: inline-block;
-    position: relative;
-    bottom: 19px;
-    color: white;
-    text-shadow: 0 1px 1px rgba(black,0.3);
-  }
-
-  &.voted .picture {
-    @include animation(pulse .75s infinite alternate,
-                      wobble .5s);
-  }
-
-  .picture {
-    @include size(50);
-
-    position: relative;
-    margin: 0 20px 0 0;
-    border-radius: 50%;
-    overflow: hidden;
-    display: inline-block;
-    box-shadow: 0 1px 2px rgba(black, 0.3);
-    @include transition(all .4s);
-    /* @include backface-visibility(hidden); */
-  
-    .avatar {
-      @include transition(all .4s);
-    }
-  }
+    margin: auto;
+    @include size(60);
+    display: block;
 }
+.picture {
+    position: relative;
+    @include size(60);
+    @include transition(all .5s);
+    @include transform-style(preserve-3d);
+}
+
+.avatar, .back-avatar {
+    @include size(60);
+    border-radius: 50%;
+    display: block;
+    position: absolute;
+    @include backface-visibility(hidden);
+}
+
+.back-avatar {
+    @include transform(rotateY(180deg));
+    @include backface-visibility(visible);
+}
+
+.backface {
+  @include transform(rotateY(180deg));
+  @include backface-visibility(hidden);
+}
+
+.vote { 
+    border-radius: 50%;
+    text-align: center;
+    padding: 13px 0 0;
+    @include size(60);
+    color: white;
+    font-size: 30px;
+    position: absolute;
+    background: rgba(green, .6);
+}
+
 
 #voters {
   padding: 20px;
   
   &.all-votes-cast .picture {
-    @include animation(none);
+    /* @include animation(none); */
+    @include transform(rotateY(180deg));
   }
   
-  &.all-votes-cast .picture .avatar {
-    @include backface-visibility(hidden);
-    @include transform(rotateY(180deg));    
-  }
-
-  &.all-votes-cast .picture .vote {
-    @include transform(rotateY(0));    
-  }
 }
+
+
 
 @include keyframes(pulse) {
   0% {
@@ -108,27 +155,32 @@ img {
   }
 }
 
-.vote {
-  position: absolute;
-  top: 0;
-  left: 0;
+/* .backface { */
+/*   @include size(50); */
+/*   @include backface-visibility(hidden); */
+/*   @include transform(rotateY(180deg)); */
+/*   border-radius: 50%; */
+/*   position: absolute; */
+/* } */
 
-  width: 100%;
-  height: 100%;
-  text-align: center;
-  padding: 9px 0 0;
+/* .vote { */
+/*   position: absolute; */
+/*   top: 0; */
+/*   left: 0; */
 
-  font-size: 30px;
-  color: white;
-  text-shadow: 0 1px 0 rgba(black, 0.2);
+/*   border-radius: 50%; */
 
-  background: rgba(#36c444, 1);
-  border-radius: 50%;
-  
-  @include transform(rotateY(180deg));
-  @include transition(all .4s);
-  @include backface-visibility(hidden);
-}
+/*   @include size(50); */
+/*   text-align: center; */
+/*   padding: 0; */
+
+/*   font-size: 30px; */
+/*   color: white; */
+/*   text-shadow: 0 1px 0 rgba(black, 0.2); */
+
+/*   background: rgba(#36c444, .6); */
+/* } */
+
 
 /* .all-votes-cast .picture, */
 /* .voted .picture.visible { */

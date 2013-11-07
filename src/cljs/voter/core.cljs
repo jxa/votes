@@ -20,8 +20,9 @@
   [:li.person {:class (str (when-not (empty? vote) "voted")
                            (when (= @my-id id) " visible"))}
    [:div.picture
-    [:div
-     [:img.avatar {:src img-url}]
+    [:img.avatar {:src img-url}]
+    [:div.backface
+     [:img.back-avatar {:src img-url}]
      [:div.vote {:class (when (= @my-id id) "visible")}
       vote]]]
    [:div.name name]])
@@ -125,7 +126,9 @@
     (reset! my-id "2")
     (reset! participants
             [{:id "1", :name "John", :img-url "http://i206.photobucket.com/albums/bb22/cherrycreamsoda_photos/david-hasselhoff-07.jpg", :vote ""}
-             {:id "2", :name "Chandu", :img-url "http://i206.photobucket.com/albums/bb22/cherrycreamsoda_photos/david-hasselhoff-07.jpg", :vote "2"}])))
+             {:id "2", :name "Chandu", :img-url "http://i206.photobucket.com/albums/bb22/cherrycreamsoda_photos/david-hasselhoff-07.jpg", :vote "2"}]))
+  (data!))
+
 
 ;; TODOs ...
 ;; gapi.hangout.layout.displayNotice to show when a vote is opened
