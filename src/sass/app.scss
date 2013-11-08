@@ -34,12 +34,21 @@ img {
   @include size(60);
   display: block;
   position: relative;
+  border-radius: 50%;
+  @include transition(all .4s);
+  &.voted {
+    box-shadow: 0 0 0 3px #36c444;
+
+    &.visible .picture {
+      @include transform(rotateY(180deg));
+    }
+  }
 }
 
 .name {
   display: inline-block;
   position: relative;
-  bottom: 36px;
+  bottom: 39px;
   left: 78px;
   color: white;
   text-shadow: 0 1px 1px rgba(black,0.3);
@@ -52,9 +61,9 @@ img {
   @include transform-style(preserve-3d);
 }
 
-person.voted .picture {
-  @include animation(pulse .75s infinite alternate, wobble .5s);
-}
+/* .person.voted .picture { */
+/*   @include animation(pulse .75s infinite alternate, wobble .5s); */
+/* } */
 
 .avatar, .back-avatar {
   @include size(60);
@@ -77,7 +86,7 @@ person.voted .picture {
 .vote { 
   border-radius: 50%;
   text-align: center;
-  padding: 13px 0 0;
+  padding: 10px 0 0;
   @include size(60);
   color: white;
   font-size: 30px;
@@ -85,15 +94,12 @@ person.voted .picture {
   background: rgba(green, .6);
 }
 
-
 #voters {
   padding: 20px;
   
   &.all-votes-cast .picture {
-    /* @include animation(none); */
     @include transform(rotateY(180deg));
   }
-  
 }
 
 
