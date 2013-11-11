@@ -19,6 +19,7 @@ body {
   color: #fff;
   font-size: 14px;
   text-shadow: 0 1px 0 rgba(black, 0.2);
+  width: 300px;
 }
 
 img {
@@ -31,31 +32,35 @@ img {
 
 .person {
   margin: 0 0 16px;
-  @include size(60);
   display: block;
-  position: relative;
-  border-radius: 50%;
-  @include transition(all .4s);
-  &.voted {
+  &.voted .picture {
     box-shadow: 0 0 0 3px #36c444;
-
-    &.visible .picture {
-      @include transform(rotateY(180deg));
-    }
+  }
+  &.voted .picture {
+    @include animation(pulse .75s infinite alternate);
+  }
+  &.voted .picture .avatar {
+    @include animation(wobble .5s);
+  }
+  
+  &.voted.visible .picture {
+    @include transform(rotateY(180deg));
   }
 }
 
 .name {
   display: inline-block;
+  bottom: 24px;
   position: relative;
-  bottom: 39px;
-  left: 78px;
   color: white;
   text-shadow: 0 1px 1px rgba(black,0.3);
 }
 
 .picture {
+  display: inline-block;
   position: relative;
+  border-radius: 50%;
+  margin: 0 20px 0 0;
   @include size(60);
   @include transition(all .4s);
   @include transform-style(preserve-3d);
@@ -79,6 +84,7 @@ img {
 }
 
 .backface {
+  @include size(60);
   @include transform(rotateY(180deg));
   @include backface-visibility(hidden);
 }
@@ -86,7 +92,8 @@ img {
 .vote { 
   border-radius: 50%;
   text-align: center;
-  padding: 10px 0 0;
+  line-height: 1.2;
+  padding: 12px 0 0;
   @include size(60);
   color: white;
   font-size: 30px;
@@ -95,10 +102,11 @@ img {
 }
 
 #voters {
-  padding: 20px;
+  padding: 20px 20px 100px;
   
   &.all-votes-cast .picture {
     @include transform(rotateY(180deg));
+    @include animation(none);
   }
 }
 
@@ -136,6 +144,8 @@ img {
   bottom: 0;
   @include size(100% 100);
   padding: 10px;
+  background: #333;
+  box-shadow: 0 -1px 5px rgba(0,0,0,.3);
 }
 
 #vote-form {
