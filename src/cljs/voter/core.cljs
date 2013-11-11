@@ -125,8 +125,8 @@
   (defn data! []
     (reset! my-id "2")
     (reset! participants
-            [{:id "1", :name "John", :img-url "http://i206.photobucket.com/albums/bb22/cherrycreamsoda_photos/david-hasselhoff-07.jpg", :vote ""}
-             {:id "2", :name "Chandu", :img-url "http://i206.photobucket.com/albums/bb22/cherrycreamsoda_photos/david-hasselhoff-07.jpg", :vote "2"}]))
+            [{:id "1", :name "John Andrews", :img-url "http://lorempixel.com/50/50", :vote ""}
+             {:id "2", :name "Chandu Tennety", :img-url "http://lorempixel.com/50/50", :vote "2"}]))
   (data!))
 
 
@@ -136,3 +136,11 @@
 ;; Abstain from voting (but you want to see the vote results)
 ;;   - maybe implemented with a simple "Abstain" checkbox + flag
 ;; disable clicking on "reset all votes" until all votes are cast
+
+;; Feedback from first ICANN party
+;; more visible votes
+;; scrollable votes area
+;; "End Voting Early" button
+;; prevent voting after reveal
+;; help user understand that they can change their vote
+;; intro video
