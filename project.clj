@@ -21,6 +21,8 @@
 
   ;; :profiles {:dev {:plugins [[com.cemerick/clojurescript.test "0.1.0"]]}}
 
+  :aliases {"build" ["run" "-m" "voter.tasks/build"]}
+
   :repl-options {:nrepl-middleware [cemerick.piggieback/wrap-cljs-repl]}
 
   :cljsbuild {:builds

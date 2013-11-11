@@ -93,6 +93,11 @@
     (fs/mkdir (dist env "css"))
     (spit (fs/file (dist env "css/app.css")) css)))
 
-(defn build [env]
+;; TODO: copy production and staging js from a build dir
+;;  the problem is that cljsbuild clean wipes out ALL files from ALL builds
+(defn build
+  "build static assets for specified environment"
+  [& [env]]
   (build-html env)
-  (build-css env))
+  (build-css env)
+  (System/exit 0))
