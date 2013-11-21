@@ -17,3 +17,4 @@ pom.xml.asc
 /.sass-cache
 /src/sass/.sass-cache
 /src/sass/bourbon/.sass-cache
+/.DS_Store

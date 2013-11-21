@@ -104,7 +104,7 @@ img {
 #voters {
   padding: 20px 20px 100px;
   
-  &.all-votes-cast .picture {
+  &.display-votes .picture {
     @include transform(rotateY(180deg));
     @include animation(none);
   }
@@ -177,7 +177,7 @@ img {
   box-shadow: 0 1px 2px rgba(black, 0.3);
 }
 
-#clear-all {
+#change-vote-state {
   @include size(100% 36);
   color: white;
   border-radius: 2px;
@@ -186,14 +186,5 @@ img {
   box-shadow: 0 1px 2px rgba(black, 0.3);
   text-shadow: 0 1px 0 rgba(black, 0.2);
   @include linear-gradient(#cf493c, #db4b3e);
-  
-  opacity: .5;
-  @include transition(opacity .4s);
-  pointer-events: none;
-  
-  &.all-votes-cast {
-    pointer-events: auto;
-    opacity: 1;
-  }
 }
 

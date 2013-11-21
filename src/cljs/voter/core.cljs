@@ -15,6 +15,8 @@
 
 (def participants (atom []))
 (def my-id (atom ""))
+(def vote-state (atom :open))
+(def vote-state-key "-estimation-party-state")
 
 (defn person-t [{:keys [id name img-url vote] :as person}]
   [:li.person {:class (str (when-not (empty? vote) "voted")
@@ -28,18 +30,24 @@
    [:div.name name]])
 
 (bind! "#voter-content"
-       (let [all-votes-cast (when-not (some empty? (map :vote @participants))
-                              "all-votes-cast")]
+       (let [closed? (= @vote-state :closed)
+             display-votes (when (or closed?
+                                     (not (some empty? (map :vote @participants))))
+                             "display-votes")]
          [:div#content-inner
           [:ul#voters
-           {:class all-votes-cast}
+           {:class display-votes}
            (unify @participants person-t)]
           [:div#voting-booth
            [:form#vote-form
             [:input#my-vote {:name "my-vote" :autofocus true :autocomplete "off"
                              :maxlength 4 :size 4 :placeholder "Enter Vote"}]
             [:input#submit-vote {:type "submit" :value "Vote"}]]
-           [:button#clear-all {:class all-votes-cast} "Reset All Votes"]]]))
+           [:button#change-vote-state
+            {:class display-votes}
+            (if display-votes
+              "Reset All Votes"
+              "End Current Vote")]]]))
 
 
 
@@ -47,14 +55,23 @@
 
 (defn cast-my-vote [e]
   (.preventDefault e)
-  (let [input (dom/select "#my-vote")
-        vote (dom/val input)]
-    (hangout/set-shared-state (hangout/my-id) vote)
-    (dom/val input "")))
+  (if (= :open @vote-state)
+    (let [input (dom/select "#my-vote")
+          vote (dom/val input)]
+      (hangout/set-shared-state (hangout/my-id) vote)
+      (dom/val input ""))
+    (hangout/notice "Voting is currently closed.")))
 
-(defn clear-all-votes [e]
+
+(defn change-vote-state [e]
   (.preventDefault e)
-  (hangout/clear-shared-state))
+  (if (= :open @vote-state)
+    (do
+      ;; TODO: broadcast message
+      (hangout/set-shared-state vote-state-key "closed"))
+    (do
+      (hangout/set-shared-state vote-state-key "open")
+      (hangout/clear-shared-state))))
 
 
 ;; Updating local state
@@ -91,6 +108,12 @@
          (assoc person :vote (aget state (:id person))))
        participants))
 
+(defn update-vote-state [hangout-state]
+  (let [state (aget hangout-state vote-state-key)]
+    (when (and (not (empty? state))
+               (not= (name @vote-state) state))
+      (reset! vote-state (keyword state)))))
+
 
 (defn init []
 
@@ -101,7 +124,7 @@
 
   ;; Bind form events
   (event/on-raw "#vote-form" :submit cast-my-vote)
-  (event/on-raw "#clear-all" :click clear-all-votes)
+  (event/on-raw "#change-vote-state" :click change-vote-state)
 
   ;; google hangout event handling
   (hangout/on-participants-change
@@ -110,6 +133,7 @@
 
   (hangout/on-state-change
    (fn [e]
+     (update-vote-state (.-state e))
      (swap! participants update-votes (.-state e)))))
 
 (defn ^:export run []
