@@ -188,7 +188,7 @@ img {
   @include linear-gradient(#cf493c, #db4b3e);
   @include transition(opacity .4s);
   
-  &.disabled {
+  &.none {
     opacity: .5;
     pointer-events: none;
   }

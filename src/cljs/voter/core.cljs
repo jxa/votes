@@ -12,43 +12,40 @@
 (defn log [msg]
   (.log js/console msg))
 
+(def local-state
+  (atom {:participants []
+         :my-id ""
+         :vote-state :open
+         :transition-type :none}))
 
-(def participants (atom []))
-(def my-id (atom ""))
-(def vote-state (atom :open))
 (def vote-state-key "-estimation-party-state")
 
 (defn person-t [{:keys [id name img-url vote] :as person}]
-  [:li.person {:class (str (when-not (empty? vote) "voted")
-                           (when (= @my-id id) " visible"))}
-   [:div.picture
-    [:img.avatar {:src img-url}]
-    [:div.backface
-     [:img.back-avatar {:src img-url}]
-     [:div.vote {:class (when (= @my-id id) "visible")}
-      vote]]]
-   [:div.name name]])
+  (let [vote-visibility (when (= (:my-id @local-state) id) "visible")]
+    [:li.person {:class (str vote-visibility (when-not (empty? vote) " voted"))}
+     [:div.picture
+      [:img.avatar {:src img-url}]
+      [:div.backface
+       [:img.back-avatar {:src img-url}]
+       [:div.vote {:class vote-visibility} vote]]]
+     [:div.name name]]))
 
 (bind! "#voter-content"
-       (let [closed? (= @vote-state :closed)
-             votes (map :vote @participants)
-             no-votes? (every? empty? votes)
-             all-votes? (not (some empty? votes))
-             display-votes (when (or closed? all-votes?) "display-votes")]
-         [:div#content-inner
-          [:ul#voters
-           {:class display-votes}
-           (unify @participants person-t)]
-          [:div#voting-booth
-           [:form#vote-form
-            [:input#my-vote {:name "my-vote" :autofocus true :autocomplete "off"
-                             :maxlength 4 :size 4 :placeholder "Enter Vote"}]
-            [:input#submit-vote {:type "submit" :value "Vote"}]]
-           [:button#change-vote-state
-            {:class (when no-votes? "disabled")}
-            (if display-votes
-              "Reset All Votes"
-              "End Current Vote")]]]))
+       [:div#content-inner
+        [:ul#voters
+         {:class (when (= :closed (:vote-state @local-state)) "display-votes")}
+         (unify (:participants @local-state) person-t)]
+        [:div#voting-booth
+         [:form#vote-form
+          [:input#my-vote {:name "my-vote" :autofocus true :autocomplete "off"
+                           :maxlength 4 :size 4 :placeholder "Enter Vote"}]
+          [:input#submit-vote {:type "submit" :value "Vote"}]]
+         [:button#change-vote-state
+          {:class (name (:transition-type @local-state))}
+          (if (= :reset (:transition-type @local-state))
+            "Reset All Votes"
+            "End Current Vote")
+          ]]])
 
 
 
@@ -56,9 +53,7 @@
 
 (defn cast-my-vote [e]
   (.preventDefault e)
-  (log "cast-my-vote")
-  (log @vote-state)
-  (if (= :open @vote-state)
+  (if (= :open (:vote-state @local-state))
     (let [input (dom/select "#my-vote")
           vote (dom/val input)]
       (hangout/set-shared-state (hangout/my-id) vote)
@@ -68,16 +63,15 @@
 
 (defn change-vote-state [e]
   (.preventDefault e)
-  (log "change-vote-state")
-  (log @vote-state)
-  (if (= :open @vote-state)
-    (do
-      (hangout/broadcast-notice (str (hangout/my-name) " has closed the vote"))
-      (hangout/set-shared-state vote-state-key "closed"))
-    (do
-      (hangout/broadcast-notice (str (hangout/my-name) " has opened a new vote"))
-      (hangout/set-shared-state vote-state-key "open")
-      (hangout/clear-shared-state))))
+  (case (:transition-type @local-state)
+    :reset (do
+             (hangout/broadcast-notice (str (hangout/my-name) " has opened a new vote"))
+             (hangout/clear-shared-state)
+             (hangout/set-shared-state vote-state-key "open"))
+    :close (do
+             (hangout/broadcast-notice (str (hangout/my-name) " has closed the vote"))
+             (hangout/set-shared-state vote-state-key "closed"))
+    (log (str "Can't transition from state" (:transition-type @local-state)))))
 
 
 ;; Updating local state
@@ -88,9 +82,6 @@
      :name (.-displayName person)
      :img-url (.-url (.-image person))}))
 
-(defn included-in? [c thing]
-  (some (set thing) c))
-
 (defn update-participant
   "People is a vector of maps. Find the map identified by id and update the value at key"
   [people id key val]
@@ -100,53 +91,44 @@
            person))
        people))
 
-(defn update-participants [current new]
-  (let [cur-ids (set (map :id current))
-        new-ids (set (map #(.-id (.-person %)) new))]
-    (into
-     (filter #(included-in? new-ids (:id %)) current)
-     (map participant->map
-          (remove #(included-in? cur-ids (.-id (.-person %)))
-                  new)))))
-
 (defn update-votes [participants state]
   (map (fn [person]
          (assoc person :vote (aget state (:id person))))
        participants))
 
-(defn update-vote-state
-  "A vote is open by default (when first loaded).
-   When the shared state contains a value which
-   is different than vote-state's current value
-   then we update vote-state"
-  [hangout-state]
-  (let [state-str (aget hangout-state vote-state-key)
-        state (if (empty? state-str) nil (keyword state-str))]
-    (when (and state (not= @vote-state state))
-      (reset! vote-state state))))
+(defn make-local-state [participants shared-state my-id]
+  (let [people (-> participants
+                   participant->map
+                   (update-votes shared-state))
+        votes (filter (complement empty?) (map :vote people))
+        vote-state (aget shared-state vote-state-key)]
+    {:participants people
+     :my-id my-id
+     :vote-state (cond
+                  (= 0 (count votes))              :open
+                  (= (count votes) (count people)) :closed
+                  :else                            vote-state)
+     :transition-type (cond
+                       (= (count votes) (count people)) :reset
+                       (< (count votes) (count people)) :close
+                       :else                            :none)}))
 
+(defn update-local-state [ & args]
+  (reset! local-state (make-local-state (hangout/enabled-participants)
+                                  (hangout/shared-state)
+                                  (hangout/my-id))))
 
 (defn init []
 
-  ;; Setup current state
-  (reset! my-id (hangout/my-id))
-  (let [people (map participant->map (hangout/enabled-participants))]
-    (reset! participants (update-votes people (hangout/shared-state))))
+  (update-local-state)
 
   ;; Bind form events
   (event/on-raw "#vote-form" :submit cast-my-vote)
   (event/on-raw "#change-vote-state" :click change-vote-state)
 
   ;; google hangout event handling
-  (hangout/on-participants-change
-   (fn [e]
-     (swap! participants update-participants (.-enabledParticipants e))))
-
-  (hangout/on-state-change
-   (fn [e]
-     (update-vote-state (.-state e))
-     (swap! participants update-votes (.-state e))))
-
+  (hangout/on-participants-change update-local-state)
+  (hangout/on-state-change update-local-state)
   (hangout/on-message-received
    (fn [e]
      (hangout/notice (.-message e)))))
@@ -162,10 +144,10 @@
 (when (aget js/window "__include_brepl")
   (repl/connect "http://localhost:9000/repl")
   (defn data! []
-    (reset! my-id "2")
-    (reset! participants
-            [{:id "1", :name "John Andrews", :img-url "http://lorempixel.com/50/50", :vote ""}
-             {:id "2", :name "Chandu Tennety", :img-url "http://lorempixel.com/50/50", :vote "2"}]))
+    (swap! local-state assoc :my-id "2")
+    (swap! local-state assoc :participants
+           [{:id "1", :name "John Andrews", :img-url "http://lorempixel.com/50/50", :vote ""}
+            {:id "2", :name "Chandu Tennety", :img-url "http://lorempixel.com/50/50", :vote "2"}]))
   (data!))
 
 
@@ -174,9 +156,3 @@
 ;; prevent voting after reveal
 ;; help user understand that they can change their vote
 ;; intro video
-
-
-;; hangout --> inform --> data-model
-;; data-model --> inform --> view
-;; view-event --> inform --> hangout
-;; data-model --> inform --> data-model
