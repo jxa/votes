@@ -4,10 +4,17 @@ var gapi = {
       onStateChanged: {
         add: function(){}
       },
+      onMessageReceived: {
+        add: function(){}
+      },
       getState: function(){},
       getKeys: function(){},
       setValue: function(){},
-      submitDelta: function(){}
+      submitDelta: function(){},
+      sendMessage: function(){}
+    },
+    layout: {
+      displayNotice: function(){}
     },
     onApiReady: {
       add: function(){}
@@ -38,4 +45,9 @@ gapi.hangout.EnabledParticipantsChangedEvent = {
 
 gapi.hangout.data.StateChangedEvent = {
   state: null
-}
+};
+
+gapi.hangout.data.MessageReceivedEvent = {
+  senderId: null,
+  message: null
+};

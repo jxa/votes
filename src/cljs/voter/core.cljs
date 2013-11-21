@@ -31,9 +31,10 @@
 
 (bind! "#voter-content"
        (let [closed? (= @vote-state :closed)
-             display-votes (when (or closed?
-                                     (not (some empty? (map :vote @participants))))
-                             "display-votes")]
+             votes (map :vote @participants)
+             no-votes? (every? empty? votes)
+             all-votes? (not (some empty? votes))
+             display-votes (when (or closed? all-votes?) "display-votes")]
          [:div#content-inner
           [:ul#voters
            {:class display-votes}
@@ -44,7 +45,7 @@
                              :maxlength 4 :size 4 :placeholder "Enter Vote"}]
             [:input#submit-vote {:type "submit" :value "Vote"}]]
            [:button#change-vote-state
-            {:class display-votes}
+            {:class (when no-votes? "disabled")}
             (if display-votes
               "Reset All Votes"
               "End Current Vote")]]]))
@@ -55,6 +56,8 @@
 
 (defn cast-my-vote [e]
   (.preventDefault e)
+  (log "cast-my-vote")
+  (log @vote-state)
   (if (= :open @vote-state)
     (let [input (dom/select "#my-vote")
           vote (dom/val input)]
@@ -65,11 +68,14 @@
 
 (defn change-vote-state [e]
   (.preventDefault e)
+  (log "change-vote-state")
+  (log @vote-state)
   (if (= :open @vote-state)
     (do
-      ;; TODO: broadcast message
+      (hangout/broadcast-notice (str (hangout/my-name) " has closed the vote"))
       (hangout/set-shared-state vote-state-key "closed"))
     (do
+      (hangout/broadcast-notice (str (hangout/my-name) " has opened a new vote"))
       (hangout/set-shared-state vote-state-key "open")
       (hangout/clear-shared-state))))
 
@@ -108,11 +114,16 @@
          (assoc person :vote (aget state (:id person))))
        participants))
 
-(defn update-vote-state [hangout-state]
-  (let [state (aget hangout-state vote-state-key)]
-    (when (and (not (empty? state))
-               (not= (name @vote-state) state))
-      (reset! vote-state (keyword state)))))
+(defn update-vote-state
+  "A vote is open by default (when first loaded).
+   When the shared state contains a value which
+   is different than vote-state's current value
+   then we update vote-state"
+  [hangout-state]
+  (let [state-str (aget hangout-state vote-state-key)
+        state (if (empty? state-str) nil (keyword state-str))]
+    (when (and state (not= @vote-state state))
+      (reset! vote-state state))))
 
 
 (defn init []
@@ -134,7 +145,11 @@
   (hangout/on-state-change
    (fn [e]
      (update-vote-state (.-state e))
-     (swap! participants update-votes (.-state e)))))
+     (swap! participants update-votes (.-state e))))
+
+  (hangout/on-message-received
+   (fn [e]
+     (hangout/notice (.-message e)))))
 
 (defn ^:export run []
   (event/on-load
@@ -154,17 +169,14 @@
   (data!))
 
 
-;; TODOs ...
-;; gapi.hangout.layout.displayNotice to show when a vote is opened
-;;    -- or reset "Derek has reset the vote"
-;; Abstain from voting (but you want to see the vote results)
-;;   - maybe implemented with a simple "Abstain" checkbox + flag
-;; disable clicking on "reset all votes" until all votes are cast
-
-;; Feedback from first ICANN party
-;; more visible votes
-;; scrollable votes area
+;; == Feedback from first ICANN party ==
 ;; "End Voting Early" button
 ;; prevent voting after reveal
 ;; help user understand that they can change their vote
 ;; intro video
+
+
+;; hangout --> inform --> data-model
+;; data-model --> inform --> view
+;; view-event --> inform --> hangout
+;; data-model --> inform --> data-model
