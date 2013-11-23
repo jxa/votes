@@ -30,22 +30,23 @@
        [:div.vote {:class vote-visibility} vote]]]
      [:div.name name]]))
 
-(bind! "#voter-content"
-       [:div#content-inner
-        [:ul#voters
-         {:class (when (= :closed (:vote-state @local-state)) "display-votes")}
-         (unify (:participants @local-state) person-t)]
-        [:div#voting-booth
-         [:form#vote-form
-          [:input#my-vote {:name "my-vote" :autofocus true :autocomplete "off"
-                           :maxlength 4 :size 4 :placeholder "Enter Vote"}]
-          [:input#submit-vote {:type "submit" :value "Vote"}]]
-         [:button#change-vote-state
-          {:class (name (:transition-type @local-state))}
-          (if (= :reset (:transition-type @local-state))
-            "Reset All Votes"
-            "End Current Vote")
-          ]]])
+(defn bind-dom []
+  (bind! "#voter-content"
+         [:div#content-inner
+          [:ul#voters
+           {:class (when (= :closed (:vote-state @local-state)) "display-votes")}
+           (unify (:participants @local-state) person-t)]
+          [:div#voting-booth
+           [:form#vote-form
+            [:input#my-vote {:name "my-vote" :autofocus true :autocomplete "off"
+                             :maxlength 4 :size 4 :placeholder "Enter Vote"}]
+            [:input#submit-vote {:type "submit" :value "Vote"}]]
+           [:button#change-vote-state
+            {:class (name (:transition-type @local-state))}
+            (if (= :reset (:transition-type @local-state))
+              "Reset All Votes"
+              "End Current Vote")
+            ]]]))
 
 
 
@@ -91,35 +92,40 @@
            person))
        people))
 
-(defn update-votes [participants state]
+(defn update-votes [state participants]
   (map (fn [person]
          (assoc person :vote (aget state (:id person))))
        participants))
 
 (defn make-local-state [participants shared-state my-id]
-  (let [people (-> participants
-                   participant->map
-                   (update-votes shared-state))
-        votes (filter (complement empty?) (map :vote people))
+  (let [people (->> participants
+                    (map participant->map)
+                    (update-votes shared-state))
+        vote-count (count (filter (complement empty?) (map :vote people)))
+        people-count (count people)
         vote-state (aget shared-state vote-state-key)]
     {:participants people
      :my-id my-id
      :vote-state (cond
-                  (= 0 (count votes))              :open
-                  (= (count votes) (count people)) :closed
-                  :else                            vote-state)
+                  (= 0 vote-count)            :open
+                  (= vote-count people-count) :closed
+                  (not (empty? vote-state))   (keyword vote-state)
+                  :else                       :open)
      :transition-type (cond
-                       (= (count votes) (count people)) :reset
-                       (< (count votes) (count people)) :close
-                       :else                            :none)}))
+                       (= 0 vote-count)            :none
+                       (= vote-count people-count) :reset
+                       (= vote-state "closed")     :reset
+                       (< vote-count people-count) :close
+                       :else                       :none)}))
 
 (defn update-local-state [ & args]
   (reset! local-state (make-local-state (hangout/enabled-participants)
                                   (hangout/shared-state)
-                                  (hangout/my-id))))
+                                  (hangout/my-id)))
+  (pp @local-state))
 
 (defn init []
-
+  (bind-dom)
   (update-local-state)
 
   ;; Bind form events
@@ -142,6 +148,7 @@
 ;; BREPL development
 
 (when (aget js/window "__include_brepl")
+  (bind-dom)
   (repl/connect "http://localhost:9000/repl")
   (defn data! []
     (swap! local-state assoc :my-id "2")
