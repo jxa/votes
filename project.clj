@@ -10,6 +10,7 @@
                  [com.cemerick/piggieback "0.1.2"]
                  [me.raynes/fs "1.4.5"]
                  [enlive "1.1.4"]
+                 [org.clojure/data.xml "0.0.7"]
                  [com.cemerick/clojurescript.test "0.2.1"]]
 
   :plugins [[lein-cljsbuild "1.0.0"]
@@ -28,13 +29,7 @@
 
   :repl-options {:nrepl-middleware [cemerick.piggieback/wrap-cljs-repl]}
 
-  :cljsbuild {:builds {;; :staging {:source-paths ["src/cljs"]
-                       ;;           :compiler {:output-to "dist/staging/js/app.js"
-                       ;;                      :source-map "dist/staging/js/app.js.map"
-                       ;;                      :optimizations :advanced
-                       ;;                      :pretty-print false
-                       ;;                      :externs ["resources/externs.js"]}}
-                       :dev {:source-paths ["src/cljs"]
+  :cljsbuild {:builds {:dev {:source-paths ["src/cljs"]
                              :compiler {:output-to "resources/public/js/app.js"
                                         :optimizations :whitespace
                                         :pretty-print true
@@ -43,6 +38,12 @@
                               :compiler {:output-to "target/cljs/test.js"
                                          :optimizations :whitespace
                                          :pretty-print true
+                                         :externs ["resources/externs.js"]}}
+                       :prod {:source-paths ["src/cljs"]
+                              :compiler {:output-to "target/cljs/app.js"
+                                         :source-map "target/cljs/app.js.map"
+                                         :optimizations :advanced
+                                         :pretty-print false
                                          :externs ["resources/externs.js"]}}}
               :test-commands {"unit-tests" ["phantomjs" :runner "target/cljs/test.js"]}}
 
