@@ -109,10 +109,11 @@
                        (< vote-count people-count) :close
                        :else                       :none)}))
 
-(defn update-local-state [ & args]
-  (reset! local-state (make-local-state (hangout/enabled-participants)
-                                  (hangout/shared-state)
-                                  (hangout/my-id)))
+(defn update-local-state [ & [participants state id]]
+  (reset! local-state
+          (make-local-state (or participants (hangout/enabled-participants))
+                            (or state (hangout/shared-state))
+                            (or id (hangout/my-id))))
   (pp @local-state))
 
 (defn init []
@@ -124,8 +125,12 @@
   (event/on-raw "#change-vote-state" :click change-vote-state)
 
   ;; google hangout event handling
-  (hangout/on-participants-change update-local-state)
-  (hangout/on-state-change update-local-state)
+  (hangout/on-participants-change
+   (fn [e] (update-local-state (.-enabledParticipants e))))
+
+  (hangout/on-state-change
+   (fn [e] (update-local-state nil (.-state e))))
+
   (hangout/on-message-received
    (fn [e]
      (hangout/notice (.-message e)))))
