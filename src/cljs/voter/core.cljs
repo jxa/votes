@@ -83,15 +83,6 @@
      :name (.-displayName person)
      :img-url (.-url (.-image person))}))
 
-(defn update-participant
-  "People is a vector of maps. Find the map identified by id and update the value at key"
-  [people id key val]
-  (map (fn [person]
-         (if (= id (:id person))
-           (assoc person key val)
-           person))
-       people))
-
 (defn update-votes [state participants]
   (map (fn [person]
          (assoc person :vote (aget state (:id person))))
