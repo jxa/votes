@@ -68,7 +68,10 @@
 (defn build
   "build static assets for specified environment"
   [& [env]]
-  (build-html env)
-  (build-css env)
-  (build-js env)
+  (if env
+    (do
+      (build-html env)
+      (build-css env)
+      (build-js env))
+    (println "Usage: lein build <environment-name>"))
   (System/exit 0))

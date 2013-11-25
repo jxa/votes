@@ -23,8 +23,6 @@
 
   :ring {:handler voter.server/app}
 
-  ;; :profiles {:dev {:plugins []}}
-
   :aliases {"build" ["run" "-m" "voter.tasks/build"]}
 
   :repl-options {:nrepl-middleware [cemerick.piggieback/wrap-cljs-repl]}
