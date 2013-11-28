@@ -18,4 +18,4 @@ pom.xml.asc
 /src/sass/.sass-cache
 /src/sass/bourbon/.sass-cache
 *.DS_Store
-
+/dist/*

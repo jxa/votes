@@ -23,7 +23,7 @@
 
   :ring {:handler voter.server/app}
 
-  :aliases {"build" ["run" "-m" "voter.tasks/build"]}
+  :aliases {"distribute" ["run" "-m" "voter.tasks/distribute"]}
 
   :repl-options {:nrepl-middleware [cemerick.piggieback/wrap-cljs-repl]}
 
@@ -39,7 +39,6 @@
                                          :externs ["resources/externs.js"]}}
                        :prod {:source-paths ["src/cljs"]
                               :compiler {:output-to "target/cljs/app.js"
-                                         :source-map "target/cljs/app.js.map"
                                          :optimizations :advanced
                                          :pretty-print false
                                          :externs ["resources/externs.js"]}}}

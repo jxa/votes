@@ -4,24 +4,41 @@
             [clojure.string :as cstring]
             [clojure.java.shell :refer [sh]]
             [clojure.data.xml :as xml]
-            [clojure.java.io :as io]))
+            [clojure.java.io :as io])
+  (:import [java.security MessageDigest]))
 
+(defn md5 [string]
+  (let [bytes (.getBytes (str string) "UTF-8")
+        digest (.digest (MessageDigest/getInstance "MD5") bytes)]
+    (format "%032x" (BigInteger. 1 digest))))
 
-(defn dist
-  "distribution path"
-  ([env] (str "dist/" env))
-  ([env path] (str "dist/" env "/" path)))
+(defn add-md5 [content path]
+  (if-let [[match fname ext] (re-matches #"^(.+)\.(\w+)$" path)]
+    (str fname "-" (md5 content) "." ext)
+    (str path "-" (md5 content))))
 
-(defn asset-url [env path]
-  (str (if (= env "development")
-         "http://localhost:3000/"
-         (str "https://dl.dropboxusercontent.com/u/108659/estimation_party/" env "/"))
-       path))
+(defn write-with-md5
+  "computes MD5 hash, appends it to the filename, writes content to that filename
+   and returns the filename"
+  [content path]
+  (let [md5path (add-md5 content path)]
+    (spit md5path content)
+    md5path))
+
+(defn bucket [context]
+  (case (:env context)
+    "staging" "estimationparty-staging"
+    "production" "estimationparty"))
+
+(defn s3-path [context file]
+  (str "//" (bucket context)
+       ".s3.amazonaws.com"
+       (cstring/replace file (:path context) "")))
 
 (html/deftemplate page "page.html"
-  [env]
-  [:head :link] (html/set-attr :href (asset-url env "css/app.css"))
-  [:script#js-app] (html/set-attr :src (asset-url env "js/app.js"))
+  [{:keys [env path js css] :as context}]
+  [:head :link] (html/set-attr :href (s3-path context css))
+  [:script#js-app] (html/set-attr :src (s3-path context js))
   [:script#js-initialize] (html/content
                            (if (= env "development")
                              "window.__include_brepl = true;"
@@ -29,49 +46,71 @@
 
 (defn build-development-html
   "Output html directly for use in local dev"
-  [page]
-  (spit (fs/file "resources/public/test.html") (cstring/join page)))
+  [context]
+  (spit (fs/file "resources/public/test.html") (cstring/join (page context))))
 
 (defn build-manifest
   "Wrap the html content in the XML that google expects"
-  [content env]
-  (with-open [out (io/writer (fs/file (dist env "manifest.xml")))]
-    (xml/emit
-     (xml/sexp-as-element
-      [:Module
-       [:ModulePrefs {:title "Estimation Party"}
-        [:Require {:feature "rpc"}]
-        [:Require {:feature "views"}]
-        [:Require {:feature "locked-domain"}]]
-       [:Content {:type "html"}
-        [:-cdata content]]])
-     out)))
+  [{:keys [path] :as context}]
+  (println "building xml manifest")
+  (let [content (cstring/join (page context))
+        manpath (str path "/manifest.xml")]
+    (with-open [out (io/writer (fs/file manpath))]
+      (xml/emit
+       (xml/sexp-as-element
+        [:Module
+         [:ModulePrefs {:title "Estimation Party"}
+          [:Require {:feature "rpc"}]
+          [:Require {:feature "views"}]
+          [:Require {:feature "locked-domain"}]]
+         [:Content {:type "html"}
+          [:-cdata content]]])
+       out))
+    (assoc context :manifest manpath)))
 
-(defn build-html [env]
-  (if (= env "development")
-    (build-development-html (page env))
-    (build-manifest (cstring/join (page env)) env)))
+(defn build-js [{:keys [env path] :as context}]
+  (println "copying JS")
+  (fs/mkdir (str path "/js"))
+  (assoc context :js (write-with-md5 (slurp "target/cljs/app.js") (str path "/js/app.js"))))
 
-(defn build-css [env]
+(defn build-css [{:keys [env path] :as context}]
+  (println "building CSS")
   (let [{:keys [out exit err]} (sh "sass" "src/sass/app.scss")]
-    (if (= 0 exit)
-      (do
-        (fs/mkdir (dist env "css"))
-        (spit (fs/file (dist env "css/app.css")) out))
-      (throw (Error. err)))))
+    (when-not (= 0 exit)
+      (throw (Error. err)))
+    (fs/mkdir (str path "/css"))
+    (assoc context :css (write-with-md5 out (str path "/css/app.css")))))
 
-(defn build-js [env]
-  (fs/mkdir (dist env "js"))
-  (fs/copy "target/cljs/app.js" (dist env "js/app.js"))
-  (fs/copy "target/cljs/app.js.map" (dist env "js/app.js.map")))
+(defn sync-s3 [{:keys [env path] :as context}]
+  (println "Copying files to S3")
+  (let [{:keys [out exit err]} (sh "aws" "s3" "sync" path
+                                   (str "s3://" (bucket context))
+                                   "--delete" "--acl=public-read")]
+    (when-not (= 0 exit)
+      (println "ERROR uploading to S3.\n Do you have the aws command line utils installed?\nhttp://aws.amazon.com/cli/")
+      (println err))
+    (println out)
+    (assoc context :bucket bucket)))
 
-(defn build
-  "build static assets for specified environment"
+(defn ensure-env [{:keys [env] :as context}]
+  (if (contains? #{"production" "staging"} env)
+    (do
+      (fs/mkdir (str "dist/" env))
+      (assoc context :path (str "dist/" env)))
+    (do
+      (println "No such environment" env)
+      (System/exit 0))))
+
+(defn distribute
+  "css-gen -> css-write -> js-gen -> js-write -> html-gen -> html-write"
   [& [env]]
   (if env
-    (do
-      (build-html env)
-      (build-css env)
-      (build-js env))
+    (-> {:env env}
+        ensure-env
+        build-css
+        build-js
+        build-manifest
+        sync-s3
+        println)
     (println "Usage: lein build <environment-name>"))
   (System/exit 0))
