@@ -1,7 +1,9 @@
 (ns voter.core
   (:require
    [clojure.browser.repl :as repl]
+   [voter.protocols :as proto]
    [voter.hangout :as hangout]
+   [voter.dev-hangout :as dev]
    [c2.core :refer [unify]]
    [c2.dom :as dom]
    [c2.event :as event])
@@ -15,6 +17,7 @@
 (def local-state
   (atom {:participants []
          :my-id ""
+         :my-name ""
          :vote-state :open
          :transition-type :none}))
 
@@ -52,51 +55,42 @@
 
 ;; Form Event Handlers
 
-(defn cast-my-vote [e]
+(defn cast-my-vote [hangout e]
   (.preventDefault e)
   (if (= :open (:vote-state @local-state))
     (let [input (dom/select "#my-vote")
           vote (dom/val input)]
-      (hangout/set-shared-state (hangout/my-id) vote)
+      (proto/set-shared-state hangout (:my-id @local-state) vote)
       (dom/val input ""))
-    (hangout/notice "Voting is currently closed.")))
+    (proto/display-notice hangout "Voting is currently closed.")))
 
 
-(defn change-vote-state [e]
+(defn change-vote-state [hangout e]
   (.preventDefault e)
   (case (:transition-type @local-state)
     :reset (do
-             (hangout/broadcast-notice (str (hangout/my-name) " has opened a new vote"))
-             (hangout/clear-shared-state)
-             (hangout/set-shared-state vote-state-key "open"))
+             (proto/broadcast-notice hangout (str (:my-name @local-state) " has opened a new vote"))
+             (proto/reset-shared-state hangout)
+             (proto/set-shared-state hangout vote-state-key "open"))
     :close (do
-             (hangout/broadcast-notice (str (hangout/my-name) " has closed the vote"))
-             (hangout/set-shared-state vote-state-key "closed"))
+             (proto/broadcast-notice hangout (str (:my-name @local-state) " has closed the vote"))
+             (proto/set-shared-state hangout vote-state-key "closed"))
     (log (str "Can't transition from state" (:transition-type @local-state)))))
 
 
 ;; Updating local state
-
-(defn participant->map [participant]
-  (let [person (.-person participant)]
-    {:id (.-id person)
-     :name (.-displayName person)
-     :img-url (.-url (.-image person))}))
 
 (defn update-votes [state participants]
   (map (fn [person]
          (assoc person :vote (aget state (:id person))))
        participants))
 
-(defn make-local-state [participants shared-state my-id]
-  (let [people (->> participants
-                    (map participant->map)
-                    (update-votes shared-state))
+(defn make-local-state [participants shared-state]
+  (let [people (update-votes shared-state participants)
         vote-count (count (filter (complement empty?) (map :vote people)))
         people-count (count people)
         vote-state (aget shared-state vote-state-key)]
     {:participants people
-     :my-id my-id
      :vote-state (cond
                   (= 0 vote-count)            :open
                   (= vote-count people-count) :closed
@@ -109,53 +103,45 @@
                        (< vote-count people-count) :close
                        :else                       :none)}))
 
-(defn update-local-state [ & [participants state id]]
-  (reset! local-state
-          (make-local-state (or participants (hangout/enabled-participants))
-                            (or state (hangout/shared-state))
-                            (or id (hangout/my-id))))
-  (pp @local-state))
+(defn update-local-state [hangout & [participants state]]
+  (swap! local-state merge
+         (make-local-state (or participants (proto/enabled-participants hangout))
+                           (or state (proto/shared-state hangout)))))
 
-(defn init []
+
+(def hangout-api (atom nil))
+
+(defn init [api]
   (bind-dom)
-  (update-local-state)
+  (reset! hangout-api
+          (proto/initialize
+           api
+           (reify proto/IHangoutState
+             (initialized [_ api local-participant]
+               (event/on-raw "#vote-form" :submit (partial cast-my-vote api))
+               (event/on-raw "#change-vote-state" :click (partial change-vote-state api))
+               (swap! local-state assoc
+                      :my-id (:id local-participant)
+                      :my-name (:name local-participant)))
+             (state-changed [_ api shared-state]
+               (update-local-state api nil shared-state))
+             (participants-changed [_ api participants]
+               (update-local-state api participants))
+             (message-received [_ api message]
+               (proto/display-notice api message))))))
 
-  ;; Bind form events
-  (event/on-raw "#vote-form" :submit cast-my-vote)
-  (event/on-raw "#change-vote-state" :click change-vote-state)
-
-  ;; google hangout event handling
-  (hangout/on-participants-change
-   (fn [e] (update-local-state (.-enabledParticipants e))))
-
-  (hangout/on-state-change
-   (fn [e] (update-local-state nil (.-state e))))
-
-  (hangout/on-message-received
-   (fn [e]
-     (hangout/notice (.-message e)))))
-
-(defn ^:export run []
+(defn ^:export run [gapi-hangout]
   (event/on-load
-   (fn []
-     (hangout/on-hangout-ready init))))
+   #(init (hangout/map->GoogleHangout {:hangout gapi-hangout}))))
 
-
-;; BREPL development
-
-(when (aget js/window "__include_brepl")
-  (bind-dom)
-  (repl/connect "http://localhost:9000/repl")
-  (defn data! []
-    (swap! local-state assoc :my-id "2")
-    (swap! local-state assoc :participants
-           [{:id "1", :name "John Andrews", :img-url "http://lorempixel.com/50/50", :vote ""}
-            {:id "2", :name "Chandu Tennety", :img-url "http://lorempixel.com/50/50", :vote "2"}]))
-  (data!))
-
-
-;; == Feedback from first ICANN party ==
-;; "End Voting Early" button
-;; prevent voting after reveal
-;; help user understand that they can change their vote
-;; intro video
+(defn ^:export run-dev []
+  (event/on-load
+   #(do
+      (repl/connect "http://localhost:9000/repl")
+      (init (dev/map->DevHangout
+             {:participants (atom [{:id "1", :name "John Andrews",
+                                    :img-url "http://lorempixel.com/50/50"}
+                                   {:id "2", :name "Chandu Tennety",
+                                    :img-url "http://lorempixel.com/75/75"}])
+              :current-participant (atom {:id "1", :name "John Andrews",
+                                          :img-url "http://lorempixel.com/50/50"})})))))

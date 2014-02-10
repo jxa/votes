@@ -28,7 +28,7 @@
 (defn bucket [context]
   (case (:env context)
     "staging" "estimationparty-staging"
-    "production" "estimationparty"))
+    "production" "estimationparty.com"))
 
 (defn s3-path [context file]
   (str "//" (bucket context)
