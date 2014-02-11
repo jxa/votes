@@ -4,7 +4,9 @@
 /checkouts
 /out
 /repl
-/resources/public
+/resources/public/js
+/resources/public/css
+/resources/public/app.html
 pom.xml
 pom.xml.asc
 *.jar

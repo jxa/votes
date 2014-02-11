@@ -13,9 +13,9 @@
                  [org.clojure/data.xml "0.0.7"]
                  [com.cemerick/clojurescript.test "0.2.2"]]
 
-  :plugins [[lein-cljsbuild "1.0.0"]
+  :plugins [[lein-cljsbuild "1.0.2"]
             [lein-ring "0.8.7"]
-            [com.cemerick/clojurescript.test "0.2.1"]]
+            [com.cemerick/clojurescript.test "0.2.2"]]
   :hooks [leiningen.cljsbuild]
 
   :source-paths ["src/clj"]

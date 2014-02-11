@@ -1,0 +1,33 @@
+#!/bin/bash
+
+port=3000
+root="$( cd "$( dirname "${BASH_SOURCE[0]}" )/.." && pwd )"
+resources="$root/resources/public"
+
+# shut down subshell processes before exiting
+# `kill 0` sends the signal to all processes in the current process group
+# i.e. any subprocess we create in this script
+trap "kill 0" SIGHUP SIGINT SIGTERM
+
+# check for sass on the path
+if command -v sass >/dev/null 2>&1; then
+    (sass --watch "$root/src/sass:$resources/css") &
+else
+    echo "sass is not installed. gem install sass."
+fi
+
+# watch clojurescript for changes
+lein do cljsbuild clean, cljsbuild auto dev &
+
+# Start http server for local dev
+(cd $resources && python -m SimpleHTTPServer $port) &
+
+# build dev html
+# TODO: make this a watcher
+cp $root/src/templates/page.html $resources/app.html
+
+# open dev page in chrome
+open http://localhost:$port/app.html
+
+# wait for subprocesses
+wait
