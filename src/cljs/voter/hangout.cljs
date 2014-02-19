@@ -82,8 +82,8 @@
       (on-hangout-ready this
        #(do
           (init-listener this state-listener)
-          (proto/initialized
-           listener this (participant->map (.getLocalParticipant hangout)))))
+          (proto/initialized state-listener this
+                             (participant->map (.getLocalParticipant hangout)))))
       this))
 
   (enabled-participants [this]
@@ -100,7 +100,7 @@
     (.getState (data this)))
 
   (reset-shared-state [this]
-    (clear-shared-state hangout))
+    (clear-shared-state this))
 
   (set-shared-state [this key val]
     (.setValue (data this) key val)))

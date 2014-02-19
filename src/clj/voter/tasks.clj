@@ -27,19 +27,18 @@
 
 (defn bucket [context]
   (case (:env context)
-    "staging" "estimationparty-staging"
+    "staging" "staging.estimationparty.com"
     "production" "estimationparty.com"))
 
 (defn s3-path [context file]
-  (str "//" (bucket context)
-       ".s3.amazonaws.com"
+  (str "//s3.amazonaws.com/" (bucket context)
        (cstring/replace file (:path context) "")))
 
 (html/deftemplate page "page.html"
   [{:keys [env path js css] :as context}]
   [:head :link] (html/set-attr :href (s3-path context css))
   [:script#js-app] (html/set-attr :src (s3-path context js))
-  [:script#js-initialize] (html/content "voter.core.run(gapi.hangout);"))
+  [:script#js-initialize] (html/content "voter.core.run();"))
 
 (defn build-manifest
   "Wrap the html content in the XML that google expects"
@@ -82,7 +81,7 @@
 
 (defn sync-s3 [{:keys [env path] :as context}]
   (println "Copying files to S3")
-  (let [{:keys [out exit err]} (sh "aws" "s3" "sync" path
+  (let [{:keys [out exit err]} (sh "aws" "--profile" "john" "s3" "sync" path
                                    (str "s3://" (bucket context))
                                    "--delete" "--acl=public-read")]
     (when-not (zero? exit)

@@ -122,7 +122,8 @@
                (event/on-raw "#change-vote-state" :click (partial change-vote-state api))
                (swap! local-state assoc
                       :my-id (:id local-participant)
-                      :my-name (:name local-participant)))
+                      :my-name (:name local-participant))
+               (update-local-state api))
              (state-changed [_ api shared-state]
                (update-local-state api nil shared-state))
              (participants-changed [_ api participants]
@@ -130,9 +131,9 @@
              (message-received [_ api message]
                (proto/display-notice api message))))))
 
-(defn ^:export run [gapi-hangout]
+(defn ^:export run []
   (event/on-load
-   #(init (hangout/map->GoogleHangout {:hangout gapi-hangout}))))
+   #(init (hangout/map->GoogleHangout {:hangout (.-hangout js/gapi)}))))
 
 (defn ^:export run-dev []
   (event/on-load
