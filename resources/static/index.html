@@ -89,7 +89,7 @@
         <h1>Estimation Party</h1>
         <p>Estimation Party is an add-on for Google+ Hangouts which helps facilitate the agile estimation process. It is especially useful for distributed teams.
         </p>
-        <p>Estimation Party runs in the hangout sidebar and stays out of the way so you can continue to converse and screenshare as you normally would. When it comes time to estimate a feature, put your estimate in the text field and submit. Once everyone has voted you'll be able to see everyone's estimate. In the case that one or more people are unavailable to estimate, or don't have an opinion you can end the voting early to reveal everyone's.
+        <p>Estimation Party runs in the hangout sidebar and stays out of the way so you can continue to converse and screenshare as you normally would. When it comes time to estimate a feature, put your estimate in the text field and submit. Once everyone has voted you'll be able to see everyone's estimate. In the case that one or more people are unavailable to estimate, or don't have an opinion you can end the voting early to reveal all estimates.
         </p>
       </div>
     </header>
@@ -108,7 +108,7 @@
       <div class="wrapper">
         <p>Click the hangout button to start a new hangout with Estimation Party loaded.
         </p>
-        <a href="https://plus.google.com/hangouts/_?gid=764395153181" style="text-decoration:none;">
+        <a id="start-ep" href="https://plus.google.com/hangouts/_?gid=764395153181" style="text-decoration:none;">
           <img src="https://ssl.gstatic.com/s2/oz/images/stars/hangout/1/gplus-hangout-60x230-normal.png"
                alt="Start a Hangout"
                style="border:0;width:230px;height:60px;"/>
@@ -124,9 +124,30 @@
       </div>
     </footer>
 
-    <script type="text/javascript">
-      (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
-        (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o), m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)})
-      (window,document,'script','//www.google-analytics.com/analytics.js','ga');ga('create', 'UA-24056220-1', 'estimationparty.com'); send', 'pageview');
+    <script id="analytics">
+     (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+         (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+                              m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+                              })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+     ga('create', 'UA-24056220-1', 'estimationparty.com');
+     ga('send', 'pageview');
+
+     (function(){
+         function addListener (element, type, callback) {
+             if (element.addEventListener) element.addEventListener(type, callback);
+             else if (element.attachEvent) element.attachEvent('on' + type, callback);
+         }
+
+         var hangoutButton = document.getElementById ("start-ep");
+         addListener(hangoutButton, 'click', function(){
+             ga('send', {
+                 'hitType': 'event',          // Required.
+                 'eventCategory': 'button',   // Required.
+                 'eventAction': 'click',      // Required.
+                 'eventLabel': 'Start Hangout'
+             });
+         });
+     })();
     </script>
   </body>
