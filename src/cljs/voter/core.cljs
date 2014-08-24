@@ -6,13 +6,21 @@
    [voter.dev-hangout :as dev]
    [c2.core :refer [unify]]
    [c2.dom :as dom]
-   [c2.event :as event])
+   [c2.event :as event]
+   [goog.dom :as gdom])
   (:use-macros
    [c2.util :only [bind! pp]]))
 
 
 (defn log [msg]
   (.log js/console msg))
+
+(defn classed
+  "return a space separated string of class names"
+  [& classes]
+  (apply str
+         (interpose " "
+                    (remove nil? classes))))
 
 (def local-state
   (atom {:participants []
@@ -25,7 +33,8 @@
 
 (defn person-t [{:keys [id name img-url vote] :as person}]
   (let [vote-visibility (when (= (:my-id @local-state) id) "visible")]
-    [:li.person {:class (str vote-visibility (when-not (empty? vote) " voted"))}
+    [:li.person {:class (classed vote-visibility
+                                 (when-not (empty? vote) "voted"))}
      [:div.picture
       [:img.avatar {:src img-url}]
       [:div.backface
@@ -52,7 +61,6 @@
             ]]]))
 
 
-
 ;; Form Event Handlers
 
 (defn cast-my-vote [hangout e]
@@ -77,6 +85,25 @@
              (proto/set-shared-state hangout vote-state-key "closed"))
     (log (str "Can't transition from state" (:transition-type @local-state)))))
 
+(defn confetti! []
+  (let [container (dom/select ".confetti")
+        colors '[red white green yellow purple]
+        spins  '[spin-1 spin-2 spin-3]
+        rand-px #(str (rand-int %) "px")
+        make-piece #(dom/append! container
+                     [:div
+                      {:class (classed "confetti-piece"
+                                       (rand-nth colors)
+                                       (rand-nth spins))
+                       :style {:margin-top (str (+ -20 (rand-int -40)) "px")
+                               :left (rand-px 300)}}])
+        cleanup #(gdom/removeChildren container)]
+
+    (dotimes [n 100]
+      (js/setTimeout make-piece (rand-int 1000)))
+    (dotimes [n (inc (rand-int 3))]
+      (js/setTimeout make-piece 1500))
+    (js/setTimeout cleanup 4000)))
 
 ;; Updating local state
 
@@ -129,7 +156,17 @@
              (participants-changed [_ api participants]
                (update-local-state api participants))
              (message-received [_ api message]
-               (proto/display-notice api message))))))
+               (proto/display-notice api message)))))
+
+  (add-watch local-state :confetti-watch
+             (fn [key ref old new]
+               (if (and (= :open (:vote-state old))
+                        (= :closed (:vote-state new)))
+                 (let [votes (filter #(re-matches #"[0-9]+" %)
+                                     (map :vote (:participants new)))]
+                   (if (and (< 1 (count votes))
+                            (apply = votes))
+                     (confetti!)))))))
 
 (defn ^:export run []
   (event/on-load
@@ -143,6 +180,10 @@
              {:participants (atom [{:id "1", :name "John Andrews",
                                     :img-url "http://lorempixel.com/50/50"}
                                    {:id "2", :name "Chandu Tennety",
-                                    :img-url "http://lorempixel.com/75/75"}])
+                                    :img-url "http://lorempixel.com/75/75"}
+                                   {:id "3", :name "Ringo Starr",
+                                    :img-url "http://lorempixel.com/50/50"}])
               :current-participant (atom {:id "1", :name "John Andrews",
                                           :img-url "http://lorempixel.com/50/50"})})))))
+
+(def ^:export test-confetti confetti!)

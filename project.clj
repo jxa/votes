@@ -6,7 +6,7 @@
   :dependencies [[org.clojure/clojure "1.5.1"]
                  [org.clojure/clojurescript "0.0-2156"]
                  [ring "1.2.1"]
-                 [com.keminglabs/c2 "0.2.4-SNAPSHOT"]
+                 [com.keminglabs/c2 "0.2.3"]
                  [com.cemerick/piggieback "0.1.2"]
                  [me.raynes/fs "1.4.5"]
                  [enlive "1.1.5"]

@@ -42,7 +42,7 @@ img {
   &.voted .picture .avatar {
     @include animation(wobble .5s);
   }
-  
+
   &.voted.visible .picture {
     @include transform(rotateY(180deg));
   }
@@ -89,7 +89,7 @@ img {
   @include backface-visibility(hidden);
 }
 
-.vote { 
+.vote {
   border-radius: 50%;
   text-align: center;
   line-height: 1.2;
@@ -103,7 +103,7 @@ img {
 
 #voters {
   padding: 20px 20px 100px;
-  
+
   &.display-votes .picture {
     @include transform(rotateY(180deg));
     @include animation(none);
@@ -159,7 +159,7 @@ img {
   border-radius: 2px;
   margin: 0 10px 0 0;
   text-align: center;
-  
+
   @include placeholder{
     color: #d1d1d1;
   }
@@ -187,10 +187,89 @@ img {
   text-shadow: 0 1px 0 rgba(black, 0.2);
   @include linear-gradient(#cf493c, #db4b3e);
   @include transition(opacity .4s);
-  
+
   &.none {
     opacity: .5;
     pointer-events: none;
   }
 }
 
+@include keyframes(drop) {
+  from {top: -2%;}
+  to {top:103%;}
+}
+
+@include keyframes(jiggle) {
+  from {
+    @include transform(translate(-10px, 0));
+  }
+  50% {
+    @include transform(translate(10px, 0));
+  }
+  to {
+    @include transform(translate(-10px, 0));
+  }
+}
+
+@include keyframes(spina) {
+    0% {
+      @include transform(rotateY(0deg) rotateZ(0deg));
+    }
+    100% {
+      @include transform(rotateY(1800deg) rotateZ(720deg));
+    }
+}
+
+@include keyframes(spinb) {
+    0% {
+      @include transform(rotateX(0deg) rotateY(0deg) rotateZ(0deg));
+    }
+    100% {
+      @include transform(rotateX(360deg) rotateY(1800deg) rotateZ(720deg));
+    }
+}
+
+@include keyframes(spinc) {
+    0% {
+      @include transform(rotateX(0deg) rotateY(0deg) rotateZ(0deg));
+    }
+    100% {
+      @include transform(rotateX(180deg) rotateY(720deg) rotateZ(1800deg));
+    }
+}
+
+.confetti {
+  overflow: hidden;
+
+  @include position(absolute, 0px 0px 0px 0px);
+
+  .red {background-color: #da0000;}
+  .white {background-color:#eee;}
+  .green {background-color: #469639;}
+  .yellow {background-color: #ff8913;}
+  .purple {background-color: #a66de3;}
+}
+
+.confetti-piece {
+  position: absolute;
+  display: block;
+  width: 8px;
+  height: 16px;
+
+  @include animation-direction(normal, normal);
+  @include animation-timing-function(ease-in, ease-in);
+  @include animation-duration(2s, 2s);
+  @include animation-iteration-count(1, 1);
+
+  &.spin-1 {
+    @include animation-name(drop, spina);
+  }
+
+  &.spin-2 {
+    @include animation-name(drop, spinb);
+  }
+
+  &.spin-3 {
+    @include animation-name(drop, spinc);
+  }
+}
